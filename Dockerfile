@@ -4,6 +4,8 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 
+RUN mkdir -p /usr/src/app/caches
+
 RUN npm install
 
 COPY . .
