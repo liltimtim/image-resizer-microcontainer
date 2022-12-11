@@ -21,38 +21,46 @@ router.use((req, res, next) => {
 })
 
 router.get('/', async (req, res) => {
-    const { width, height, url } = req.query
-    if(!width || !height || !url) { 
-        return res.status(400).send()
+    try {
+        const { width, height, url } = req.query
+        if(!width || !height || !url) { 
+            return res.status(400).send()
+        }
+        const file = await downloadURL(url, width, height)
+        // const result = await resize(file, width, height)
+        // await Fs.promises.unlink(file)
+        return res.contentType('image/jpeg').send(file)
+    } catch (err) {
+        console.log(err)
+        return res.status(400).end()
     }
-    const file = await downloadURL(url)
-    const result = await resize(file, width, height)
-    await Fs.promises.unlink(file)
-    res.contentType('image/png').end(result)
-    
 })
 
 // function to download image file or attempt to download file
-async function downloadURL(url) {
+async function downloadURL(url, width, height) {
     const path = Path.resolve(__dirname, 'caches', `file-${uuid.v4()}`)
     if (process.env.DEBUG) {
         console.log("=== resolved path ===")
         console.log(path)
     }
     return new Promise(async (resolve, reject) => {
-        axios({
-            method: 'GET',
-            url,
-            responseType: 'stream'
-        })
+        axios.get(url, { responseType: 'arraybuffer' })
         .then(response => {
-            response.data.pipe(Fs.createWriteStream(path))
-            response.data.on('end', () => {
-                resolve(path)
+            return sharp(response.data)
+            .resize({
+                width: Number(width),
+                height: Number(height),
+                fit: sharp.fit.fit,
+                background: { r: 255, g: 255, b: 255, alpha: 1.0 }
             })
-            response.data.on('error', (err) => {
-                resolve(err)
-            })
+            .png()
+            .toBuffer()
+        })
+        .then(image => {
+            resolve(image)
+        })
+        .catch(err => {
+            reject(err)
         })
     })
 }
@@ -66,7 +74,7 @@ async function resize(path, width, height) {
             fit: sharp.fit.fit,
             background: { r: 255, g: 255, b: 255, alpha: 1.0 }
         })
-        .png()
+        .jpeg({ mozjpeg: true })
         .toBuffer()
         .then(data => { resolve(data) })
         .catch(err => { reject(err) })
