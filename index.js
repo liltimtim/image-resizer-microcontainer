@@ -44,7 +44,7 @@ async function downloadURL(url, width, height) {
         console.log(path)
     }
     return new Promise(async (resolve, reject) => {
-        axios.get(url, { responseType: 'arraybuffer' })
+        axios.get(url, { responseType: 'arraybuffer', maxContentLength: 520000000000000 })
         .then(response => {
             return sharp(response.data)
             .resize({
