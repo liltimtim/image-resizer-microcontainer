@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
         const file = await downloadURL(url, width, height)
         // const result = await resize(file, width, height)
         // await Fs.promises.unlink(file)
-        return res.contentType('image/jpeg').send(file)
+        return res.contentType('image/png').send(file)
     } catch (err) {
         console.log(err)
         return res.status(400).end()
